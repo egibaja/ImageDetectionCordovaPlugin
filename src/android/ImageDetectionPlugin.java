@@ -127,6 +127,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         activity = cordova.getActivity();
 
         super.initialize(cordova, webView);
+        Log.e(TAG, "Initializing.....");
 
         mLoaderCallback = new BaseLoaderCallback(activity) {
             @Override
@@ -169,7 +170,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
         setCameraIndex(CAMERA_ID_BACK);
         openCamera();
-
+        Log.e(TAG, "Algo de poner el cameraframelayout a invisible");
         cameraFrameLayout.setVisibility(View.INVISIBLE);
     }
 
@@ -269,7 +270,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     {
         super.onStart();
 
-        Log.i(TAG, "onStart(): Activity starting");
+        Log.e(TAG, "onStart(): Activity starting");
 
         if(!checkCameraPermission()) {
             ActivityCompat.requestPermissions(activity,
@@ -326,6 +327,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
     @Override
     public void onResume(boolean multitasking) {
+        Log.e(TAG, "onResume");
         super.onResume(multitasking);
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
@@ -401,6 +403,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
     @SuppressWarnings("deprecation")
     private void openCamera() {
+        Log.e(TAG, "Open camera");
         camera = null;
 
         if (mCameraIndex == CAMERA_ID_ANY) {
@@ -467,7 +470,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
     @SuppressWarnings("deprecation")
     private boolean initializeCamera(int height, int width) {
-        Log.d(TAG, "Initialize java camera");
+        Log.e(TAG, "Initialize java camera");
         boolean result = true;
         synchronized (this) {
             if (camera == null)
@@ -591,7 +594,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     private final Camera.PreviewCallback previewCallback = new Camera.PreviewCallback() {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
-            //Log.d(TAG, "ON Preview frame");
+            Log.e(TAG, "ON Preview frame");
 
             Date current_time = new Date();
             double time_passed = Math.abs(current_time.getTime() - last_time.getTime())/1000.0;
@@ -630,6 +633,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         final MatOfKeyPoint kp1 = _kp1;
         final Mat desc1 = _desc1;
         final int index = _index;
+        Log.e(TAG, "Process frame");
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
                 Mat gray = mYuv.submat(0, mYuv.rows(), 0, mYuv.cols()).t();
@@ -816,6 +820,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
     private void setBase64Pattern(JSONArray dataArray) {
         detection.clear();
+        Log.e(TAG, "setBase64Pattern");
         for (int i = 0; i < dataArray.length(); i++) {
             try {
                 detection.add(0);
@@ -866,7 +871,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
     private void updateState(boolean state, int _index) {
         final int index = _index;
-
+        Log.e(TAG, "updateState");
         int detection_limit = 6;
 
         if(state) {
