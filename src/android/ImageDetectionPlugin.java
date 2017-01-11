@@ -401,13 +401,14 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         mCameraIndex = index;
     }
 
+
     @SuppressWarnings("deprecation")
     private void openCamera() {
         Log.e(TAG, "Open camera");
         camera = null;
 
         if (mCameraIndex == CAMERA_ID_ANY) {
-            Log.d(TAG, "Trying to open camera with old open()");
+            Log.e(TAG, "Trying to open camera with old open()");
             try {
                 camera = Camera.open();
             } catch (Exception e) {
@@ -416,8 +417,8 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
             if (camera == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
                 boolean connected = false;
-                for (int camIdx = 0; camIdx < Camera.getNumberOfCameras(); ++camIdx) {
-                    Log.d(TAG, "Trying to open camera with new open(" + camIdx + ")");
+                for (int camIdx = 0; camIdx < Camera.getNumberOfCameras(); camIdx++) {
+                    Log.e(TAG, "Trying to open camera with new open(" + camIdx + ")");
                     try {
                         camera = Camera.open(camIdx);
                         connected = true;
@@ -431,9 +432,9 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
                 int localCameraIndex = mCameraIndex;
                 if (mCameraIndex == CAMERA_ID_BACK) {
-                    Log.i(TAG, "Trying to open back camera");
+                    Log.e(TAG, "Trying to open back camera");
                     Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-                    for (int camIdx = 0; camIdx < Camera.getNumberOfCameras(); ++camIdx) {
+                    for (int camIdx = 0; camIdx < Camera.getNumberOfCameras(); camIdx++) {
                         Camera.getCameraInfo(camIdx, cameraInfo);
                         if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
                             localCameraIndex = camIdx;
@@ -441,9 +442,9 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                         }
                     }
                 } else if (mCameraIndex == CAMERA_ID_FRONT) {
-                    Log.i(TAG, "Trying to open front camera");
+                    Log.e(TAG, "Trying to open front camera");
                     Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-                    for (int camIdx = 0; camIdx < Camera.getNumberOfCameras(); ++camIdx) {
+                    for (int camIdx = 0; camIdx < Camera.getNumberOfCameras(); camIdx++) {
                         Camera.getCameraInfo(camIdx, cameraInfo);
                         if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                             localCameraIndex = camIdx;
@@ -456,7 +457,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                 } else if (localCameraIndex == CAMERA_ID_FRONT) {
                     Log.e(TAG, "Front camera not found!");
                 } else {
-                    Log.d(TAG, "Trying to open camera with new open(" + localCameraIndex + ")");
+                    Log.e(TAG, "Trying to open camera with new open(" + localCameraIndex + ")");
                     try {
                         camera = Camera.open(localCameraIndex);
                     } catch (RuntimeException e) {
@@ -847,7 +848,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     Utils.bitmapToMat(scaled, image_pattern);
                     Imgproc.cvtColor(image_pattern, image_pattern, Imgproc.COLOR_BGR2GRAY);
                     //Imgproc.equalizeHist(image_pattern, image_pattern);
-
+                    Log.e(TAG, "setBase64Pattern lo mismo guarda la imagen");
                     if(save_files) {
                         Utils.matToBitmap(image_pattern, scaled);
                         String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
@@ -864,6 +865,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     triggers_descs.add(desc1);
                 }
             } catch (JSONException e) {
+                Log.e(TAG, "setBase64Pattern algo ha fallado");
                 // do nothing
             }
         }
