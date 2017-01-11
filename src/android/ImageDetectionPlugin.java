@@ -83,7 +83,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     private MatOfDMatch          matches;
     private CallbackContext      cb;
     private Date                 last_time;
-    private boolean processFrames = true, thread_over = true, debug = false,
+    private boolean processFrames = true, thread_over = true, debug = true,
             called_success_detection = false, called_failed_detection = true,
             previewing = false, save_files = false;
     private List<Integer> detection = new ArrayList<>();
@@ -293,7 +293,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         }
 
         thread_over = true;
-        debug = false;
+        debug = true;
         called_success_detection = false;
         called_failed_detection = true;
 
@@ -595,7 +595,6 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     private final Camera.PreviewCallback previewCallback = new Camera.PreviewCallback() {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
-            Log.e(TAG, "ON Preview frame");
 
             Date current_time = new Date();
             double time_passed = Math.abs(current_time.getTime() - last_time.getTime())/1000.0;
@@ -634,7 +633,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         final MatOfKeyPoint kp1 = _kp1;
         final Mat desc1 = _desc1;
         final int index = _index;
-        Log.e(TAG, "Process frame");
+        Log.e(TAG, "Processing frame-------------");
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
                 Mat gray = mYuv.submat(0, mYuv.rows(), 0, mYuv.cols()).t();
@@ -642,6 +641,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                 DescriptorMatcher matcherHamming = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
 
                 if(save_files) {
+                    Log.e(TAG, "Saving preview image");
                     if (count % 10 == 0) {
                         String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
                         Imgcodecs.imwrite(extStorageDirectory + "/pic" + count + ".png", gray);
@@ -656,6 +656,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                 orbDescriptor.compute(gray, kp2, desc2);
 
                 if (!desc1.empty() && !desc2.empty()) {
+                    Log.e(TAG, "Se ha producido un match");
                     matcherHamming.match(desc1, desc2, matches);
 
                     List<DMatch> matchesList = matches.toList();
@@ -783,11 +784,11 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                         }
 
                         if (debug) {
-                            Log.i("####### DEBUG #######", det + " " + N1 + " " + N2 + " " + N3);
+                            Log.e("####### DEBUG #######", det + " " + N1 + " " + N2 + " " + N3);
                         }
 
                         if (result) {
-                            Log.i("#### DETECTION ####", "Detected stuff");
+                            Log.e("#### DETECTION ####", "Detected stuff");
                             updateState(true, index);
                             if (debug) {
                                 Mat obj_corners = new Mat(4, 1, CvType.CV_32FC2);
