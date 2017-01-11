@@ -312,7 +312,8 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         final ViewGroup parent = (ViewGroup)child.getParent();
         if (null != parent) {
             parent.removeView(child);
-            parent.addView(child, 0);
+            //parent.addView(child, 0); originalmente
+            parent.addView(child, 1);
         }
     }
 
@@ -633,9 +634,9 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         final MatOfKeyPoint kp1 = _kp1;
         final Mat desc1 = _desc1;
         final int index = _index;
-        Log.e(TAG, "Processing frame-------------");
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
+                Log.e(TAG, "Dentro del thread-------------");
                 Mat gray = mYuv.submat(0, mYuv.rows(), 0, mYuv.cols()).t();
                 Core.flip(gray, gray, 1);
                 DescriptorMatcher matcherHamming = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
@@ -654,6 +655,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
                 orbDetector.detect(gray, kp2);
                 orbDescriptor.compute(gray, kp2, desc2);
+                Log.e(TAG, "compute ejecutado...match?");
 
                 if (!desc1.empty() && !desc2.empty()) {
                     Log.e(TAG, "Se ha producido un match");
