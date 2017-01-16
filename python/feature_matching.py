@@ -11,7 +11,7 @@ orb = cv2.ORB_create(nfeatures=500, edgeThreshold=50, patchSize=50)
 
 # find the keypoints and descriptors with SIFT
 kp1, des1 = orb.detectAndCompute(img1,None)
-kp2, des2 = orb2.detectAndCompute(img2,None)
+kp2, des2 = orb.detectAndCompute(img2,None)
 # create BFMatcher object
 bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
@@ -37,5 +37,15 @@ plt.imshow(img3),plt.show()
 # probar codigo en plugin de Image clouduki whatever
 
 
-# Este parece muy bueno.
-# http://stackoverflow.com/questions/10666436/scale-and-rotation-template-matching
+"""
+
+# find the keypoints with ORB
+kp = orb.detect(img,None)
+
+# compute the descriptors with ORB
+kp, des = orb.compute(img, kp)
+
+# draw only keypoints location,not size and orientation
+img2 = cv2.drawKeypoints(img,kp,None,color=(255,0,0), flags=0)
+plt.imshow(img2),plt.show()
+"""
