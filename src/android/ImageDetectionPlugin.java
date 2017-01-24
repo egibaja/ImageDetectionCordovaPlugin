@@ -25,7 +25,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.content.Context;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -60,18 +59,9 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.InputStream;
-import java.lang.StringBuilder;
-
 
 public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder.Callback {
 
@@ -87,15 +77,12 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     private SurfaceHolder        surfaceHolder;
     private Mat                  mYuv;
     private Mat                  desc2;
-    private Mat                  desc3;
-    private FeatureDetector      surfDetector;
-    private DescriptorExtractor  surfDescriptor;
+    private FeatureDetector      orbDetector;
+    private DescriptorExtractor  orbDescriptor;
     private MatOfKeyPoint        kp2;
-    private MatOfKeyPoint        kp3;
     private MatOfDMatch          matches;
     private CallbackContext      cb;
     private Date                 last_time;
-    private JSONArray            patterns;
     private boolean processFrames = true, thread_over = true, debug = true,
             called_success_detection = false, called_failed_detection = true,
             previewing = false, save_files = false;
@@ -118,7 +105,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
-    
+
     @SuppressWarnings("deprecation")
     private static class JavaCameraSizeAccessor implements CameraBridgeViewBase.ListItemAccessor {
 
@@ -185,39 +172,6 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         openCamera();
         Log.e(TAG, "Algo de poner el cameraframelayout a invisible");
         cameraFrameLayout.setVisibility(View.INVISIBLE);
-
-        Context context = cordova.getActivity().getApplicationContext(); 
-        String combA = loadAssetTextAsString(context, "www/combA.txt");
-        String combB = loadAssetTextAsString(context, "www/combB.txt");
-
-        // Initialize the patterns to detect
-        patterns.put(combA);
-        patterns.put(combB);
-
-        cordova.getThreadPool().execute(new Runnable() {
-            public void run() {
-                // clear before adding triggers
-                triggers.clear();
-                triggers_kps.clear();
-                triggers_descs.clear();
-
-                String message = "Pattens to be set - " + patterns.length();
-                message += "\nBefore set pattern " + triggers.size();
-                Log.e(TAG,message);
-                setBase64Pattern(patterns);
-                message += "\nAfter set pattern " + triggers.size();
-                Log.e(TAG,message);
-                if(patterns.length() == triggers.size()) {
-                    trigger_size = triggers.size();
-                    message += "\nPatterns set - " + triggers.size();
-                    Log.e(TAG,message);
-                } else {
-                    message += "\nOne or more patterns failed to be set.";
-                    Log.e(TAG,message);
-                }
-            }
-        });
-
     }
 
     @Override
@@ -238,6 +192,33 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         if (action.equals("isDetecting")) {
             Log.i(TAG, "isDetecting called");
             cb = callbackContext;
+            return true;
+        }
+        if(action.equals("setPatterns")) {
+            Log.i(TAG, "setPatterns called");
+            final JSONArray inputData = data;
+            final CallbackContext cbContext = callbackContext;
+            cordova.getThreadPool().execute(new Runnable() {
+                public void run() {
+                    // clear before adding triggers
+                    triggers.clear();
+                    triggers_kps.clear();
+                    triggers_descs.clear();
+
+                    String message = "Pattens to be set - " + inputData.length();
+                    message += "\nBefore set pattern " + triggers.size();
+                    setBase64Pattern(inputData);
+                    message += "\nAfter set pattern " + triggers.size();
+                    if(inputData.length() == triggers.size()) {
+                        trigger_size = triggers.size();
+                        message += "\nPatterns set - " + triggers.size();
+                        cbContext.success(message);
+                    } else {
+                        message += "\nOne or more patterns failed to be set.";
+                        cbContext.error(message);
+                    }
+                }
+            });
             return true;
         }
         if(action.equals("startProcessing")) {
@@ -331,7 +312,8 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         final ViewGroup parent = (ViewGroup)child.getParent();
         if (null != parent) {
             parent.removeView(child);
-            parent.addView(child, 0);
+            //parent.addView(child, 0); originalmente
+            parent.addView(child, 1);
         }
     }
 
@@ -373,12 +355,10 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         matches = new MatOfDMatch();
-        surfDetector = FeatureDetector.create(FeatureDetector.SURF);
-        surfDescriptor = DescriptorExtractor.create(DescriptorExtractor.SURF);
+        orbDetector = FeatureDetector.create(FeatureDetector.ORB);
+        orbDescriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
         kp2 = new MatOfKeyPoint();
         desc2 = new Mat();
-        kp3 = new MatOfKeyPoint();
-        desc3 = new Mat();
     }
 
     @Override
@@ -482,7 +462,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     try {
                         camera = Camera.open(localCameraIndex);
                     } catch (RuntimeException e) {
-                        Log.e(TAG, "Camera #" + localCameraIndex + " failed to open: " + e.getLocalizedMessage());
+                        Log.e(TAG, "Camera #" + localCameraIndex + "failed to open: " + e.getLocalizedMessage());
                     }
                 }
                 cameraId = localCameraIndex;
@@ -633,7 +613,13 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     Camera.Parameters params = camera.getParameters();
                     mYuv = new Mat(params.getPreviewSize().height, params.getPreviewSize().width, CvType.CV_8UC1);
                     mYuv.put(0, 0, data);
-                    processFrame(triggers);
+
+                    for (int i = 0; i < triggers.size(); i++) {
+                        Mat pattern = triggers.get(i);
+                        MatOfKeyPoint kp1 = triggers_kps.get(i);
+                        Mat desc1 = triggers_descs.get(i);
+                        processFrame(pattern, kp1, desc1, i);
+                    }
                 }
                 //update time and reset timeout
                 last_time = current_time;
@@ -643,165 +629,197 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         }
     };
 
-    private void processFrame(List<Mat> triggers) {
+    private void processFrame(Mat _pattern, MatOfKeyPoint _kp1, Mat _desc1, int _index) {
+        final Mat pattern = _pattern;
+        final MatOfKeyPoint kp1 = _kp1;
+        final Mat desc1 = _desc1;
+        final int index = _index;
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                Log.e(TAG, "Dentro del thread-------------");
+                Mat gray = mYuv.submat(0, mYuv.rows(), 0, mYuv.cols()).t();
+                Core.flip(gray, gray, 1);
+                DescriptorMatcher matcherHamming = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
 
-        for (int i = 0; i < triggers.size(); i++){
-            final Mat pattern = triggers.get(i);
-            final MatOfKeyPoint kp1 = triggers_kps.get(i);
-            final Mat desc1 = triggers_descs.get(i);
-            final int index = i;
-
-            cordova.getThreadPool().execute(new Runnable() {
-                public void run() {
-                    Log.e(TAG, "Dentro del thread-------------");
-                    int h_init = 0;
-                    int h_end = 0; 
-                    if (index==0){
-                        h_init = 0;
-                        h_end = (int)(mYuv.rows() * 0.3);
+                if(save_files) {
+                    Log.e(TAG, "Saving preview image");
+                    if (count % 10 == 0) {
+                        String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
+                        Imgcodecs.imwrite(extStorageDirectory + "/pic" + count + ".png", gray);
+                        Log.i("### FILE ###", "File saved to " + extStorageDirectory + "/pic" + count + ".png");
                     }
-                    if (index==1){
-                        h_init = (int)(mYuv.rows() * 0.7);
-                        h_end = mYuv.rows();
-                    }
-                    
-                    Mat gray = mYuv.submat(h_init, h_end, 0, mYuv.cols()).t();
-                    Core.flip(gray, gray, 1);
-                    DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE );
+                    count++;
+                }
 
-                    if(save_files) {
-                        Log.e(TAG, "Saving preview image");
-                        if (count % 10 == 0) {
-                            String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
-                            Imgcodecs.imwrite(extStorageDirectory + "/pic" + count + ".png", gray);
-                            Log.i("### FILE ###", "File saved to " + extStorageDirectory + "/pic" + count + ".png");
-                        }
-                        count++;
-                    }
+                //Imgproc.equalizeHist(gray, gray);
 
-                    //Imgproc.equalizeHist(gray, gray);
-                    String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
+                orbDetector.detect(gray, kp2);
+                orbDescriptor.compute(gray, kp2, desc2);
+                Log.e(TAG, "compute ejecutado...match?");
 
-                    try{
-                        File tempFile = File.createTempFile("config" + index, ".yml", new File(extStorageDirectory));
-                        String settings = "%YAML:1.0\nhessianThreshold: 1000\n";
+                if (!desc1.empty() && !desc2.empty()) {
+                    Log.e(TAG, "Se ha producido un match");
+                    matcherHamming.match(desc1, desc2, matches);
 
-                        FileWriter writer = new FileWriter(tempFile, false);
-                        writer.write(settings);
-                        writer.close();
-                        Log.e(TAG, "cargando...");
-                        surfDetector.read(tempFile.getPath());
-                    }catch(IOException e){
-                        Log.e(TAG, "error cargando la configuracion de SURF");
-                        e.printStackTrace();
-                    }
+                    List<DMatch> matchesList = matches.toList();
+                    LinkedList<DMatch> good_matches = new LinkedList<>();
+                    MatOfDMatch gm = new MatOfDMatch();
 
-                    if (index==0){
-                        surfDetector.detect(gray, kp2);
-                        surfDescriptor.compute(gray, kp2, desc2);
-                        Log.e(TAG, "Tratando la escena parte superior, que tiene " + kp2.size() + " puntos de interes.");
+                    double minDistance = 1000;
 
-                        Log.e(TAG, "compute ejecutado...match?");
+                    int rowCount;
 
-                        if (!desc1.empty() && !desc2.empty()) {
-                            Log.e(TAG, "Se ha producido un match");
-                            matcher.match(desc1, desc2, matches);
-                            List<DMatch> matchesList = matches.toList();
-                            Log.e(TAG, "Hemos encontrado " + matches.size() + " entre la template y la parte alta");
-                            LinkedList<DMatch> good_matches = new LinkedList<>();
-                            MatOfDMatch gm = new MatOfDMatch();
+                    if(desc1.rows() < matchesList.size())
+                        rowCount = desc1.rows();
+                    else
+                        rowCount = matchesList.size();
 
-                            double minDistance = 1000;
-
-                            int rowCount;
-
-                            if(desc1.rows() < matchesList.size())
-                                rowCount = desc1.rows();
-                            else
-                                rowCount = matchesList.size();
-
-                            for (int i = 0; i < rowCount; i++) {
-                                double dist = matchesList.get(i).distance;
-                                if (dist < minDistance) {
-                                    minDistance = dist;
-                                }
-                            }
-
-                            LinkedList<DMatch> good_matches_reduced = new LinkedList<>();
-                            MatOfDMatch gmr = new MatOfDMatch();
-                            double upperBound = 2 * minDistance;
-                            for (int i = 0; i < rowCount; i++) {
-                                if (matchesList.get(i).distance < upperBound && good_matches.size() < 500) {
-                                    good_matches.addLast(matchesList.get(i));
-                                    if(i < 10 && debug)
-                                    {
-                                        good_matches_reduced.addLast(matchesList.get(i));
-                                    }
-                                }
-                            }
-                            gm.fromList(good_matches);
-                            if(debug) {
-                                gmr.fromList(good_matches_reduced);
-                            }
-                        }
-                    }else{
-                        surfDetector.detect(gray, kp3);
-                        surfDescriptor.compute(gray, kp3, desc3);
-                        Log.e(TAG, "Tratando la escena parte superior, que tiene " + kp3.size() + " puntos de interes.");
-
-                        Log.e(TAG, "compute ejecutado...match?");
-
-                        if (!desc1.empty() && !desc3.empty()) {
-                            Log.e(TAG, "Se ha producido un match");
-                            matcher.match(desc1, desc3, matches);
-                            List<DMatch> matchesList = matches.toList();
-                            Log.e(TAG, "Hemos encontrado " + matches.size() + " entre la template y la parte baja");
-                            LinkedList<DMatch> good_matches = new LinkedList<>();
-                            MatOfDMatch gm = new MatOfDMatch();
-
-                            double minDistance = 1000;
-
-                            int rowCount;
-
-                            if(desc1.rows() < matchesList.size())
-                                rowCount = desc1.rows();
-                            else
-                                rowCount = matchesList.size();
-
-                            for (int i = 0; i < rowCount; i++) {
-                                double dist = matchesList.get(i).distance;
-                                if (dist < minDistance) {
-                                    minDistance = dist;
-                                }
-                            }
-
-                            LinkedList<DMatch> good_matches_reduced = new LinkedList<>();
-                            MatOfDMatch gmr = new MatOfDMatch();
-                            double upperBound = 2 * minDistance;
-                            for (int i = 0; i < rowCount; i++) {
-                                if (matchesList.get(i).distance < upperBound && good_matches.size() < 500) {
-                                    good_matches.addLast(matchesList.get(i));
-                                    if(i < 10 && debug)
-                                    {
-                                        good_matches_reduced.addLast(matchesList.get(i));
-                                    }
-                                }
-                            }
-                            gm.fromList(good_matches);
-                            if(debug) {
-                                gmr.fromList(good_matches_reduced);
-                            }
+                    for (int i = 0; i < rowCount; i++) {
+                        double dist = matchesList.get(i).distance;
+                        if (dist < minDistance) {
+                            minDistance = dist;
                         }
                     }
 
+                    LinkedList<DMatch> good_matches_reduced = new LinkedList<>();
+                    MatOfDMatch gmr = new MatOfDMatch();
+                    double upperBound = 2 * minDistance;
+                    for (int i = 0; i < rowCount; i++) {
+                        if (matchesList.get(i).distance < upperBound && good_matches.size() < 500) {
+                            good_matches.addLast(matchesList.get(i));
+                            if(i < 10 && debug)
+                            {
+                                good_matches_reduced.addLast(matchesList.get(i));
+                            }
+                        }
+                    }
+                    gm.fromList(good_matches);
+                    if(debug) {
+                        gmr.fromList(good_matches_reduced);
+                    }
 
-                    gray.release();
-                    if(index == (trigger_size - 1)) {
-                        thread_over = true;
+                    if (good_matches.size() >= 8) {
+                        Mat img_matches = null;
+                        if (debug) {
+                            img_matches = gray.clone();
+                            Features2d.drawMatches(
+                                    pattern,
+                                    kp1,
+                                    gray,
+                                    kp2,
+                                    gmr,
+                                    img_matches,
+                                    new Scalar(255, 0, 0),
+                                    new Scalar(0, 0, 255),
+                                    new MatOfByte(),
+                                    2);
+                        }
+
+                        LinkedList<Point> objList = new LinkedList<>();
+                        LinkedList<Point> sceneList = new LinkedList<>();
+
+                        List<KeyPoint> keypoints_objList = kp1.toList();
+                        List<KeyPoint> keypoints_sceneList = kp2.toList();
+
+                        for (int i = 0; i < good_matches.size(); i++) {
+                            objList.addLast(keypoints_objList.get(good_matches.get(i).queryIdx).pt);
+                            sceneList.addLast(keypoints_sceneList.get(good_matches.get(i).trainIdx).pt);
+                        }
+
+                        MatOfPoint2f obj = new MatOfPoint2f();
+                        obj.fromList(objList);
+
+                        MatOfPoint2f scene = new MatOfPoint2f();
+                        scene.fromList(sceneList);
+
+                        Mat H = Calib3d.findHomography(obj, scene, Calib3d.RANSAC, 5);
+
+                        boolean result = true;
+
+                        double det = 0, N1 = 0, N2 = 0, N3 = 0;
+
+                        if (!H.empty()) {
+                            double[] p1 = H.get(0, 0);
+                            double[] p2 = H.get(1, 1);
+                            double[] p3 = H.get(1, 0);
+                            double[] p4 = H.get(0, 1);
+                            double[] p5 = H.get(2, 0);
+                            double[] p6 = H.get(2, 1);
+
+                            if (p1 != null && p2 != null && p3 != null && p4 != null) {
+                                det = p1[0] * p2[0] - p3[0] * p4[0];
+                                if (det < 0) {
+                                    result = false;
+                                }
+                            } else {
+                                result = false;
+                            }
+
+                            if (p1 != null && p3 != null) {
+                                N1 = Math.sqrt(p1[0] * p1[0] + p3[0] * p3[0]);
+                                if (N1 > 4 || N1 < 0.1) {
+                                    result = false;
+                                }
+                            } else {
+                                result = false;
+                            }
+
+                            if (p2 != null && p4 != null) {
+                                N2 = Math.sqrt(p4[0] * p4[0] + p2[0] * p2[0]);
+                                if (N2 > 4 || N2 < 0.1) {
+                                    result = false;
+                                }
+                            } else {
+                                result = false;
+                            }
+
+                            if (p5 != null && p6 != null) {
+                                N3 = Math.sqrt(p5[0] * p5[0] + p6[0] * p6[0]);
+                                if (N3 > 0.002) {
+                                    result = false;
+                                }
+                            } else {
+                                result = false;
+                            }
+                        } else {
+                            result = false;
+                        }
+
+                        if (debug) {
+                            Log.e("####### DEBUG #######", det + " " + N1 + " " + N2 + " " + N3);
+                        }
+
+                        if (result) {
+                            Log.e("#### DETECTION ####", "Detected stuff");
+                            updateState(true, index);
+                            if (debug) {
+                                Mat obj_corners = new Mat(4, 1, CvType.CV_32FC2);
+                                Mat scene_corners = new Mat(4, 1, CvType.CV_32FC2);
+
+                                obj_corners.put(0, 0, 0, 0);
+                                obj_corners.put(1, 0, pattern.cols(), 0);
+                                obj_corners.put(2, 0, pattern.cols(), pattern.rows());
+                                obj_corners.put(3, 0, 0, pattern.rows());
+
+                                Core.perspectiveTransform(obj_corners, scene_corners, H);
+
+                                Imgproc.line(img_matches, new Point(scene_corners.get(0, 0)), new Point(scene_corners.get(1, 0)), new Scalar(0, 255, 0), 4);
+                                Imgproc.line(img_matches, new Point(scene_corners.get(1, 0)), new Point(scene_corners.get(2, 0)), new Scalar(0, 255, 0), 4);
+                                Imgproc.line(img_matches, new Point(scene_corners.get(2, 0)), new Point(scene_corners.get(3, 0)), new Scalar(0, 255, 0), 4);
+                                Imgproc.line(img_matches, new Point(scene_corners.get(3, 0)), new Point(scene_corners.get(0, 0)), new Scalar(0, 255, 0), 4);
+                            }
+                        } else {
+                            updateState(false, index);
+                        }
+                        H.release();
                     }
                 }
-            });
-        }
+                gray.release();
+                if(index == (trigger_size - 1)) {
+                    thread_over = true;
+                }
+            }
+        });
     }
 
     private void setBase64Pattern(JSONArray dataArray) {
@@ -809,17 +827,14 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         Log.e(TAG, "setBase64Pattern");
         for (int i = 0; i < dataArray.length(); i++) {
             try {
-                Log.e(TAG, "setBase64Pattern tratando template " + i);
                 detection.add(0);
                 String image_base64 = dataArray.getString(i);
-                String settings = "";
                 if(image_base64 != null && !image_base64.isEmpty()) {
-                    Log.e(TAG, "la template no esta vacia");
                     Mat image_pattern = new Mat();
                     MatOfKeyPoint kp1 = new MatOfKeyPoint();
                     Mat desc1 = new Mat();
 
-                    int limit = 800;
+                    int limit = 400;
                     if(image_base64.contains("data:"))
                         image_base64 = image_base64.split(",")[1];
                     byte[] decodedString = Base64.decode(image_base64, Base64.DEFAULT);
@@ -836,34 +851,17 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     Utils.bitmapToMat(scaled, image_pattern);
                     Imgproc.cvtColor(image_pattern, image_pattern, Imgproc.COLOR_BGR2GRAY);
                     //Imgproc.equalizeHist(image_pattern, image_pattern);
-
-                    // Change SURF configuration
-                    Log.e(TAG, "Preparando archivo de configuracion de SURF templates");
-                    String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
-
-                    try{
-                        File tempFile = File.createTempFile("config" + i, ".yml", new File(extStorageDirectory));
-                         if (i == 1){
-                            settings = "%YAML:1.0\nhessianThreshold: 10000\n";
-                        }else{
-                            settings = "%YAML:1.0\nhessianThreshold: 1000\n";
-                        }
-
-                        FileWriter writer = new FileWriter(tempFile, false);
-                        writer.write(settings);
-                        writer.close();
-                        Log.e(TAG, "cargando...");
-                        surfDetector.read(tempFile.getPath());
-                    }catch(IOException e){
-                        Log.e(TAG, "error cargando la configuracion de SURF");
-                        e.printStackTrace();
+                    Log.e(TAG, "setBase64Pattern lo mismo guarda la imagen");
+                    if(save_files) {
+                        Utils.matToBitmap(image_pattern, scaled);
+                        String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
+                        int num = (int) (Math.random() * 10001);
+                        Imgcodecs.imwrite(extStorageDirectory + "/pic" + num + ".png", image_pattern);
+                        Log.i("### FILE ###", "File saved to " + extStorageDirectory + "/pic" + num + ".png");
                     }
 
-                   
-                    surfDetector.detect(image_pattern, kp1);
-                    surfDescriptor.compute(image_pattern, kp1, desc1);
-
-                    Log.e(TAG, "Tratando la template " + i + " tiene " + kp1.size() + " puntos de interes.");
+                    orbDetector.detect(image_pattern, kp1);
+                    orbDescriptor.compute(image_pattern, kp1, desc1);
 
                     triggers.add(image_pattern);
                     triggers_kps.add(kp1);
@@ -931,40 +929,6 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
             called_success_detection = false;
             called_failed_detection = true;
         }
-    }
-
-    private String loadAssetTextAsString(Context context, String name) {
-        BufferedReader in = null;
-        try {
-
-            StringBuilder buf = new StringBuilder();
-            InputStream is = context.getAssets().open(name);
-            in = new BufferedReader(new InputStreamReader(is));
-
-            String str;
-            boolean isFirst = true;
-            while ( (str = in.readLine()) != null ) {
-                if (isFirst)
-                    isFirst = false;
-                else
-                    buf.append('\n');
-                buf.append(str);
-            }
-            return buf.toString();
-        } catch (IOException e) {
-            Log.e(TAG, "Error opening asset " + name);
-            Log.e(TAG, e.getMessage());
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "Error closing asset " + name);
-                }
-            }
-        }
-
-        return null;
     }
 
     private boolean getState(int index) {
