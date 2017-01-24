@@ -6,15 +6,6 @@ var ImageDetectionPlugin = function () {};
 ImageDetectionPlugin.prototype.startProcessing = function (bool, successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "ImageDetectionPlugin", "startProcessing", [bool]);
 };
-ImageDetectionPlugin.prototype.setPatterns = function (patterns, successCallback, errorCallback) {
- var _patterns = [];
- if (!(patterns instanceof Array)){
-   _patterns.push(patterns);
- } else {
-   _patterns = patterns;
- }
- cordova.exec(successCallback, errorCallback, "ImageDetectionPlugin", "setPatterns", _patterns);
-};
 ImageDetectionPlugin.prototype.isDetecting = function (successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "ImageDetectionPlugin", "isDetecting", []);
 };
