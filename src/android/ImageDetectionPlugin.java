@@ -148,6 +148,40 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     case LoaderCallbackInterface.SUCCESS:
                     {
                         Log.i(TAG, "OpenCV loaded successfully");
+                        Context context = cordova.getActivity().getApplicationContext(); 
+                        final String combA = loadAssetTextAsString(context, "www/combA.txt");
+                        final String combB = loadAssetTextAsString(context, "www/combB.txt");
+                        cordova.getThreadPool().execute(new Runnable() { 
+                            public void run() { 
+
+                                // Initialize the patterns to detect
+                                final JSONArray patterns = new JSONArray();
+                                Log.e(TAG, "asset string cargados, ");
+                                patterns.put(combA);
+                                patterns.put(combB);
+                                Log.e(TAG, "poniendo patterns");
+                                triggers.clear();
+                                triggers_kps.clear();
+                                triggers_descs.clear();
+                                Log.e(TAG, "limpiando triggers");
+
+                                String message = "Pattens to be set - " + patterns.length();
+                                message += "\nBefore set pattern " + triggers.size();
+                                Log.e(TAG,message);
+                                setBase64Pattern(patterns);
+                                message += "\nAfter set pattern " + triggers.size();
+                                Log.e(TAG,message);
+                                if(patterns.length() == triggers.size()) {
+                                    trigger_size = triggers.size();
+                                    message += "\nPatterns set - " + triggers.size();
+                                    Log.e(TAG,message);
+                                } else {
+                                    message += "\nOne or more patterns failed to be set.";
+                                    Log.e(TAG,message);
+                                }
+                            }
+                        });
+
                     } break;
                     default:
                     {
@@ -183,41 +217,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         setCameraIndex(CAMERA_ID_BACK);
         openCamera();
         Log.e(TAG, "Algo de poner el cameraframelayout a invisible");
-        cameraFrameLayout.setVisibility(View.INVISIBLE);
-        Context context = cordova.getActivity().getApplicationContext(); 
-        final String combA = loadAssetTextAsString(context, "www/combA.txt");
-        final String combB = loadAssetTextAsString(context, "www/combB.txt");
-        
-        cordova.getThreadPool().execute(new Runnable() { 
-            public void run() { 
-
-                // Initialize the patterns to detect
-                final JSONArray patterns = new JSONArray();
-                Log.e(TAG, "asset string cargados, ");
-                patterns.put(combA);
-                patterns.put(combB);
-                Log.e(TAG, "poniendo patterns");
-                triggers.clear();
-                triggers_kps.clear();
-                triggers_descs.clear();
-                Log.e(TAG, "limpiando triggers");
-
-                String message = "Pattens to be set - " + patterns.length();
-                message += "\nBefore set pattern " + triggers.size();
-                Log.e(TAG,message);
-                setBase64Pattern(patterns);
-                message += "\nAfter set pattern " + triggers.size();
-                Log.e(TAG,message);
-                if(patterns.length() == triggers.size()) {
-                    trigger_size = triggers.size();
-                    message += "\nPatterns set - " + triggers.size();
-                    Log.e(TAG,message);
-                } else {
-                    message += "\nOne or more patterns failed to be set.";
-                    Log.e(TAG,message);
-                }
-            }
-        });
+        cameraFrameLayout.setVisibility(View.INVISIBLE);        
 
     }
 
