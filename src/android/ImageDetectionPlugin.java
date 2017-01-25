@@ -88,8 +88,8 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     private Mat                  mYuv;
     private Mat                  desc2;
     private Mat                  desc3;
-    private FeatureDetector      surfDetector;
-    private DescriptorExtractor  surfDescriptor;
+    private FeatureDetector      orbDetector;
+    private DescriptorExtractor  orbDescriptor;
     private MatOfKeyPoint        kp2;
     private MatOfKeyPoint        kp3;
     private MatOfDMatch          matches;
@@ -185,7 +185,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         openCamera();
         Log.e(TAG, "Algo de poner el cameraframelayout a invisible");
         cameraFrameLayout.setVisibility(View.INVISIBLE);
-        /*
+        
         Context context = cordova.getActivity().getApplicationContext(); 
         String combA = loadAssetTextAsString(context, "www/combA.txt");
         String combB = loadAssetTextAsString(context, "www/combB.txt");
@@ -217,7 +217,6 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                 }
             }
         });
-        */
 
     }
 
@@ -374,8 +373,8 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         matches = new MatOfDMatch();
-        surfDetector = FeatureDetector.create(FeatureDetector.SURF);
-        surfDescriptor = DescriptorExtractor.create(DescriptorExtractor.SURF);
+        orbDetector = FeatureDetector.create(FeatureDetector.ORB);
+        orbDescriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
         kp2 = new MatOfKeyPoint();
         desc2 = new Mat();
         kp3 = new MatOfKeyPoint();
@@ -691,15 +690,15 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                         writer.write(settings);
                         writer.close();
                         Log.e(TAG, "cargando...");
-                        surfDetector.read(tempFile.getPath());
+                        orbDetector.read(tempFile.getPath());
                     }catch(IOException e){
                         Log.e(TAG, "error cargando la configuracion de SURF");
                         e.printStackTrace();
                     }
 
                     if (index==0){
-                        surfDetector.detect(gray, kp2);
-                        surfDescriptor.compute(gray, kp2, desc2);
+                        orbDetector.detect(gray, kp2);
+                        orbDescriptor.compute(gray, kp2, desc2);
                         Log.e(TAG, "Tratando la escena parte superior, que tiene " + kp2.size() + " puntos de interes.");
 
                         Log.e(TAG, "compute ejecutado...match?");
@@ -746,8 +745,8 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                             }
                         }
                     }else{
-                        surfDetector.detect(gray, kp3);
-                        surfDescriptor.compute(gray, kp3, desc3);
+                        orbDetector.detect(gray, kp3);
+                        orbDescriptor.compute(gray, kp3, desc3);
                         Log.e(TAG, "Tratando la escena parte superior, que tiene " + kp3.size() + " puntos de interes.");
 
                         Log.e(TAG, "compute ejecutado...match?");
@@ -854,15 +853,15 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                         writer.write(settings);
                         writer.close();
                         Log.e(TAG, "cargando...");
-                        surfDetector.read(tempFile.getPath());
+                        orbDetector.read(tempFile.getPath());
                     }catch(IOException e){
                         Log.e(TAG, "error cargando la configuracion de SURF");
                         e.printStackTrace();
                     }
 
                    
-                    surfDetector.detect(image_pattern, kp1);
-                    surfDescriptor.compute(image_pattern, kp1, desc1);
+                    orbDetector.detect(image_pattern, kp1);
+                    orbDescriptor.compute(image_pattern, kp1, desc1);
 
                     Log.e(TAG, "Tratando la template " + i + " tiene " + kp1.size() + " puntos de interes.");
 
