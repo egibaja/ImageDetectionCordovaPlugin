@@ -95,7 +95,6 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
     private MatOfDMatch          matches;
     private CallbackContext      cb;
     private Date                 last_time;
-    private JSONArray            patterns;
     private boolean processFrames = true, thread_over = true, debug = true,
             called_success_detection = false, called_failed_detection = true,
             previewing = false, save_files = false;
@@ -191,6 +190,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         String combB = loadAssetTextAsString(context, "www/combB.txt");
 
         // Initialize the patterns to detect
+        final JSONArray patterns = JSONArray();
         Log.e(TAG, "asset string cargados, ");
         patterns.put(combA);
         patterns.put(combB);
