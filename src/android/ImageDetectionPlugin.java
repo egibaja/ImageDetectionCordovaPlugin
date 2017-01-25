@@ -184,12 +184,12 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         openCamera();
         Log.e(TAG, "Algo de poner el cameraframelayout a invisible");
         cameraFrameLayout.setVisibility(View.INVISIBLE);
+        Context context = cordova.getActivity().getApplicationContext(); 
+        String combA = loadAssetTextAsString(context, "www/combA.txt");
+        String combB = loadAssetTextAsString(context, "www/combB.txt");
         
         cordova.getThreadPool().execute(new Runnable() { 
             public void run() { 
-                Context context = cordova.getActivity().getApplicationContext(); 
-                String combA = loadAssetTextAsString(context, "www/combA.txt");
-                String combB = loadAssetTextAsString(context, "www/combB.txt");
 
                 // Initialize the patterns to detect
                 final JSONArray patterns = new JSONArray();
