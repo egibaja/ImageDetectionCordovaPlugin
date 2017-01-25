@@ -190,7 +190,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         String combB = loadAssetTextAsString(context, "www/combB.txt");
 
         // Initialize the patterns to detect
-        final JSONArray patterns = JSONArray();
+        final JSONArray patterns = new JSONArray();
         Log.e(TAG, "asset string cargados, ");
         patterns.put(combA);
         patterns.put(combB);
