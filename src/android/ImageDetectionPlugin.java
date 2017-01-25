@@ -185,35 +185,39 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         Log.e(TAG, "Algo de poner el cameraframelayout a invisible");
         cameraFrameLayout.setVisibility(View.INVISIBLE);
         
-        Context context = cordova.getActivity().getApplicationContext(); 
-        String combA = loadAssetTextAsString(context, "www/combA.txt");
-        String combB = loadAssetTextAsString(context, "www/combB.txt");
+        cordova.getThreadPool().execute(new Runnable() { 
+            public void run() { 
+                Context context = cordova.getActivity().getApplicationContext(); 
+                String combA = loadAssetTextAsString(context, "www/combA.txt");
+                String combB = loadAssetTextAsString(context, "www/combB.txt");
 
-        // Initialize the patterns to detect
-        final JSONArray patterns = new JSONArray();
-        Log.e(TAG, "asset string cargados, ");
-        patterns.put(combA);
-        patterns.put(combB);
-        Log.e(TAG, "poniendo patterns");
-        triggers.clear();
-        triggers_kps.clear();
-        triggers_descs.clear();
-        Log.e(TAG, "limpiando triggers");
+                // Initialize the patterns to detect
+                final JSONArray patterns = new JSONArray();
+                Log.e(TAG, "asset string cargados, ");
+                patterns.put(combA);
+                patterns.put(combB);
+                Log.e(TAG, "poniendo patterns");
+                triggers.clear();
+                triggers_kps.clear();
+                triggers_descs.clear();
+                Log.e(TAG, "limpiando triggers");
 
-        String message = "Pattens to be set - " + patterns.length();
-        message += "\nBefore set pattern " + triggers.size();
-        Log.e(TAG,message);
-        setBase64Pattern(patterns);
-        message += "\nAfter set pattern " + triggers.size();
-        Log.e(TAG,message);
-        if(patterns.length() == triggers.size()) {
-            trigger_size = triggers.size();
-            message += "\nPatterns set - " + triggers.size();
-            Log.e(TAG,message);
-        } else {
-            message += "\nOne or more patterns failed to be set.";
-            Log.e(TAG,message);
-        }
+                String message = "Pattens to be set - " + patterns.length();
+                message += "\nBefore set pattern " + triggers.size();
+                Log.e(TAG,message);
+                setBase64Pattern(patterns);
+                message += "\nAfter set pattern " + triggers.size();
+                Log.e(TAG,message);
+                if(patterns.length() == triggers.size()) {
+                    trigger_size = triggers.size();
+                    message += "\nPatterns set - " + triggers.size();
+                    Log.e(TAG,message);
+                } else {
+                    message += "\nOne or more patterns failed to be set.";
+                    Log.e(TAG,message);
+                }
+            }
+        });
 
     }
 
@@ -815,11 +819,11 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     Mat image_pattern = new Mat();
                     MatOfKeyPoint kp1 = new MatOfKeyPoint();
                     Mat desc1 = new Mat();
-
                     int limit = 800;
                     if(image_base64.contains("data:"))
                         image_base64 = image_base64.split(",")[1];
                     byte[] decodedString = Base64.decode(image_base64, Base64.DEFAULT);
+                    Log.e(TAG, "creando bitmap");
                     Bitmap bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
                     Bitmap scaled = bitmap;
                     if (bitmap.getWidth() > limit) {
