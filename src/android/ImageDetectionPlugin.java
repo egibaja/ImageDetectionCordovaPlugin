@@ -191,12 +191,14 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         String combB = loadAssetTextAsString(context, "www/combB.txt");
 
         // Initialize the patterns to detect
-        Log.e(TAG, "asset string cargados, limpiando triggers y poniendo patterns");
+        Log.e(TAG, "asset string cargados, ");
         patterns.put(combA);
         patterns.put(combB);
+        Log.e(TAG, "poniendo patterns");
         triggers.clear();
         triggers_kps.clear();
         triggers_descs.clear();
+        Log.e(TAG, "limpiando triggers");
 
         String message = "Pattens to be set - " + patterns.length();
         message += "\nBefore set pattern " + triggers.size();
