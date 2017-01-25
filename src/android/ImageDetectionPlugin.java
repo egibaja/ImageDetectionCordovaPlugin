@@ -185,8 +185,8 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         Log.e(TAG, "Algo de poner el cameraframelayout a invisible");
         cameraFrameLayout.setVisibility(View.INVISIBLE);
         Context context = cordova.getActivity().getApplicationContext(); 
-        String combA = loadAssetTextAsString(context, "www/combA.txt");
-        String combB = loadAssetTextAsString(context, "www/combB.txt");
+        final String combA = loadAssetTextAsString(context, "www/combA.txt");
+        final String combB = loadAssetTextAsString(context, "www/combB.txt");
         
         cordova.getThreadPool().execute(new Runnable() { 
             public void run() { 
