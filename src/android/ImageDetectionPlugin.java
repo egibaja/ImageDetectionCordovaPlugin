@@ -141,6 +141,8 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         super.initialize(cordova, webView);
         Log.e(TAG, "Initializing.....");
 
+        final CordovaInterface cord = cordova;
+
         mLoaderCallback = new BaseLoaderCallback(activity) {
             @Override
             public void onManagerConnected(int status) {
@@ -148,10 +150,10 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     case LoaderCallbackInterface.SUCCESS:
                     {
                         Log.i(TAG, "OpenCV loaded successfully");
-                        Context context = cordova.getActivity().getApplicationContext(); 
+                        Context context = cord.getActivity().getApplicationContext(); 
                         final String combA = loadAssetTextAsString(context, "www/combA.txt");
                         final String combB = loadAssetTextAsString(context, "www/combB.txt");
-                        cordova.getThreadPool().execute(new Runnable() { 
+                        cord.getThreadPool().execute(new Runnable() { 
                             public void run() { 
 
                                 // Initialize the patterns to detect
