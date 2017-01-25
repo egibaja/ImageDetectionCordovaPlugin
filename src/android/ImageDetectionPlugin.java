@@ -191,32 +191,27 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         String combB = loadAssetTextAsString(context, "www/combB.txt");
 
         // Initialize the patterns to detect
+        Log.e(TAG, "asset string cargados, limpiando triggers y poniendo patterns");
         patterns.put(combA);
         patterns.put(combB);
+        triggers.clear();
+        triggers_kps.clear();
+        triggers_descs.clear();
 
-        cordova.getThreadPool().execute(new Runnable() {
-            public void run() {
-                // clear before adding triggers
-                triggers.clear();
-                triggers_kps.clear();
-                triggers_descs.clear();
-
-                String message = "Pattens to be set - " + patterns.length();
-                message += "\nBefore set pattern " + triggers.size();
-                Log.e(TAG,message);
-                setBase64Pattern(patterns);
-                message += "\nAfter set pattern " + triggers.size();
-                Log.e(TAG,message);
-                if(patterns.length() == triggers.size()) {
-                    trigger_size = triggers.size();
-                    message += "\nPatterns set - " + triggers.size();
-                    Log.e(TAG,message);
-                } else {
-                    message += "\nOne or more patterns failed to be set.";
-                    Log.e(TAG,message);
-                }
-            }
-        });
+        String message = "Pattens to be set - " + patterns.length();
+        message += "\nBefore set pattern " + triggers.size();
+        Log.e(TAG,message);
+        setBase64Pattern(patterns);
+        message += "\nAfter set pattern " + triggers.size();
+        Log.e(TAG,message);
+        if(patterns.length() == triggers.size()) {
+            trigger_size = triggers.size();
+            message += "\nPatterns set - " + triggers.size();
+            Log.e(TAG,message);
+        } else {
+            message += "\nOne or more patterns failed to be set.";
+            Log.e(TAG,message);
+        }
 
     }
 
