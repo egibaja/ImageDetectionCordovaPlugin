@@ -375,6 +375,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        Log.d(TAG, "Inicializando descriptores y keypoints");
         matches = new MatOfDMatch();
         orbDetector = FeatureDetector.create(FeatureDetector.ORB);
         orbDescriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
@@ -382,6 +383,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
         desc2 = new Mat();
         kp3 = new MatOfKeyPoint();
         desc3 = new Mat();
+        Log.d(TAG, "Fin de inicializando descriptores y keypoints");
     }
 
     @Override
