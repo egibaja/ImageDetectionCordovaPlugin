@@ -838,6 +838,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                             scaled = Bitmap.createScaledBitmap(bitmap, (int) (bitmap.getWidth()/scale), (int) (bitmap.getHeight()/scale), true);
                         }
                     }
+                    Log.e(TAG, "creando Mat");
                     Utils.bitmapToMat(scaled, image_pattern);
                     Imgproc.cvtColor(image_pattern, image_pattern, Imgproc.COLOR_BGR2GRAY);
                     //Imgproc.equalizeHist(image_pattern, image_pattern);
@@ -865,7 +866,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                         e.printStackTrace();
                     }
                     */
-                   
+                    Log.e(TAG, "detectando...");
                     orbDetector.detect(image_pattern, kp1);
                     orbDescriptor.compute(image_pattern, kp1, desc1);
 
