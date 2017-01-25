@@ -683,6 +683,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     }
 
                     //Imgproc.equalizeHist(gray, gray);
+                    /*
                     String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
 
                     try{
@@ -698,6 +699,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                         Log.e(TAG, "error cargando la configuracion de SURF");
                         e.printStackTrace();
                     }
+                    */
 
                     if (index==0){
                         orbDetector.detect(gray, kp2);
@@ -840,6 +842,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     Imgproc.cvtColor(image_pattern, image_pattern, Imgproc.COLOR_BGR2GRAY);
                     //Imgproc.equalizeHist(image_pattern, image_pattern);
 
+                    /*
                     // Change SURF configuration
                     Log.e(TAG, "Preparando archivo de configuracion de SURF templates");
                     String extStorageDirectory = Environment.getExternalStorageDirectory().toString();
@@ -861,7 +864,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                         Log.e(TAG, "error cargando la configuracion de SURF");
                         e.printStackTrace();
                     }
-
+                    */
                    
                     orbDetector.detect(image_pattern, kp1);
                     orbDescriptor.compute(image_pattern, kp1, desc1);
