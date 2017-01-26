@@ -506,7 +506,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
             /* Now set camera parameters */
             try {
                 Camera.Parameters params = camera.getParameters();
-                Log.d(TAG, "getSupportedPreviewSizes()");
+                Log.e(TAG, "getSupportedPreviewSizes()");
                 List<Camera.Size> sizes = params.getSupportedPreviewSizes();
 
                 if (sizes != null) {
@@ -514,7 +514,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     Size frameSize = calculateCameraFrameSize(sizes, new JavaCameraSizeAccessor(), height, width);
 
                     params.setPreviewFormat(ImageFormat.NV21);
-                    Log.d(TAG, "Set preview size to " + frameSize.width + "x" + frameSize.height);
+                    Log.e(TAG, "Set preview size to " + frameSize.width + "x" + frameSize.height);
                     params.setPreviewSize((int)frameSize.width, (int)frameSize.height);
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH && !android.os.Build.MODEL.equals("GT-I9100"))
@@ -523,11 +523,11 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     List<String> FocusModes = params.getSupportedFocusModes();
                     if (FocusModes != null && FocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO))
                     {
-                        Log.d(TAG, "Set focus mode continuous video " + Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO );
+                        Log.e(TAG, "Set focus mode continuous video " + Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO );
                         params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
                     }
                     else if(FocusModes != null && FocusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                        Log.d(TAG, "Set focus mode auto " + Camera.Parameters.FOCUS_MODE_AUTO );
+                        Log.e(TAG, "Set focus mode auto " + Camera.Parameters.FOCUS_MODE_AUTO );
                         params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
                     }
 
@@ -584,7 +584,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     }
 
                     /* Finally we are ready to start the preview */
-                    Log.d(TAG, "startPreview");
+                    Log.e(TAG, "startPreview");
                     camera.startPreview();
                 }
                 else
@@ -878,8 +878,9 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     triggers_kps.add(kp1);
                     triggers_descs.add(desc1);
                 }
-            } catch (JSONException e) {
+            } catch (Exception e) {
                 Log.e(TAG, "setBase64Pattern algo ha fallado");
+                Log.e(TAG, e.printStackTrace());
                 // do nothing
             }
         }
