@@ -591,7 +591,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                     result = false;
             } catch (Exception e) {
                 result = false;
-                e.printStackTrace();
+                e.getMessage();
             }
         }
 
@@ -880,7 +880,7 @@ public class ImageDetectionPlugin extends CordovaPlugin implements SurfaceHolder
                 }
             } catch (Exception e) {
                 Log.e(TAG, "setBase64Pattern algo ha fallado");
-                Log.e(TAG, e.printStackTrace());
+                Log.e(TAG, e.getMessage());
                 // do nothing
             }
         }
