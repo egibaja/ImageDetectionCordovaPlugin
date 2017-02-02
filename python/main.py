@@ -5,14 +5,14 @@ from matplotlib import pyplot as plt
 import glob, os
 
 
-LOGO_SRC = 'comb_a.png'
-LOGO_B_SRC = 'comb_b.png'
-SCENE_SRC = 'bicho2.jpg'
+LOGO_SRC = 'comb_a2.png'
+LOGO_B_SRC = 'comb_b2.png'
+SCENE_SRC = 'descarga2.png'
 
-SETTINGS_LOGO = {'nfeatures': 1000, 'edgeThreshold' : 8}
-SETTINGS_LOGO_B = {'nfeatures': 500, 'edgeThreshold' : 40}
-SETTINGS_SCENE = {'nfeatures': 500, 'edgeThreshold' : 35}
-SETTINGS_SCENE_B = {'nfeatures': 1000, 'edgeThreshold' : 20}
+SETTINGS_LOGO = {}
+SETTINGS_LOGO_B = {}
+SETTINGS_SCENE = {}
+SETTINGS_SCENE_B = {}
 
 
 def drawKp(image, kp):
@@ -46,6 +46,16 @@ def getMatches(des1, des2):
     for m,n in matches:
         if m.distance < 0.75*n.distance:
             good.append(m)
+
+    """
+    sum = 0
+    for g in good:
+        print(g.distance)
+        sum += g.distance
+    if sum >0:
+        print("la media es %i de %i puntos" %(sum/len(good), len(good)))
+    """
+    print(len(good))
     return good
 
 def isLogoPresent(matches):
@@ -88,7 +98,7 @@ def main(src):
     logo = cv2.imread(LOGO_SRC,0)
     logo_bottom = cv2.imread(LOGO_B_SRC,0)
     scene = cv2.imread(src,0)
-    scene = resize(logo, scene)
+    #scene = resize(logo, scene)
 
     h,w = scene.shape
     scene_top = scene[0: int(h * 0.3) , 0:w]
@@ -103,12 +113,14 @@ def main(src):
     kp_scene_bottom, des_scene_bottom = detectAndCompute(scene_bottom, SETTINGS_SCENE_B)
     print("--- Scene_bottom: number of descriptors %i" %(len(kp_scene_bottom)))
 
+    print("logo")
+    matches_logo = getMatches(des_scene_top, des_logo)
+    print("bottom")
     matches_bottom = getMatches(des_scene_bottom, des_logo_bottom)
    
-    matches_logo = getMatches(des_scene_top, des_logo)
 
-    print("%i matches between scene_top and logo" %(len(matches_logo)))
-    print("%i matches between scene_bottom and bottom" %(len(matches_bottom)))
+    #print("%i matches between scene_top and logo" %(len(matches_logo)))
+    #print("%i matches between scene_bottom and bottom" %(len(matches_bottom)))
 
     # check if we found the two rectangles
     #is_bottom_match = isBottomPresent(matches_bottom)
@@ -117,7 +129,14 @@ def main(src):
     # check if the logo is present
     #matches_logo_aux = sorted(matches_logo, key = lambda x:x.distance)[:10]
     #is_logo_match = isLogoPresent(matches_logo_aux)
-    is_logo_match = len(matches_logo) > 10
+    is_logo_match = len(matches_logo) > 10  
+
+    drawKp(scene_top, kp_scene_top)
+    drawKp(scene_bottom, kp_scene_bottom)
+    drawKp(logo, kp_logo)
+    drawKp(logo_bottom, kp_logo_bottom)
+    drawMatches(scene_bottom, kp_scene_bottom, logo_bottom, kp_logo_bottom, matches_bottom)
+    drawMatches(scene_top,kp_scene_top, logo,kp_logo,matches_logo)
 
     if is_logo_match and is_bottom_match:
     	print("hay logo y puntos")
@@ -125,22 +144,22 @@ def main(src):
     else:
     	print("---not found: logo y puntos = (%s y %s)" %(is_logo_match, is_bottom_match))
         return False
-    
-
 
     drawKp(scene_top, kp_scene_top)
     drawKp(scene_bottom, kp_scene_bottom)
-    #drawKp(logo, kp_logo)
-    #drawKp(logo_bottom, kp_logo_bottom)
-    drawMatches(scene_bottom, kp_scene_bottom, logo_bottom, kp_logo_bottom, matches_bottom[:4])
+    drawKp(logo, kp_logo)
+    drawKp(logo_bottom, kp_logo_bottom)
+    drawMatches(scene_bottom, kp_scene_bottom, logo_bottom, kp_logo_bottom, matches_bottom)
     drawMatches(scene_top,kp_scene_top, logo,kp_logo,matches_logo)
+    
 
 
 if __name__ == "__main__":
     os.chdir(".")
     num_valids = 0
     num_invalids = 0
-    for file in glob.glob("./images/valids/*.jpeg"):
+    """
+    for file in glob.glob("./tests/*"):
     	print(" %s ......................" %(file))
     	if main(file):
             num_valids += 1
@@ -149,5 +168,5 @@ if __name__ == "__main__":
     print("____________________________________________________")
     print("%i Imagenes VALIDAS" %(num_valids))
     print("%i Imagenes NO VALIDAS" %(num_invalids))
-
-	#main(SCENE_SRC)
+    """
+    main(SCENE_SRC)
